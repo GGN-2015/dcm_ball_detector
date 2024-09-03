@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pydicom
+from tqdm import tqdm
 from scipy.ndimage import uniform_filter
 import functools
 
@@ -119,6 +120,26 @@ def get_raw_aided_matrix_for_log_znorm_in_folder(folder: str):
         min_matrix = np.minimum(min_matrix, arr[i])
     return max_matrix - min_matrix
 
+# 文件夹中有 dcm 序列，输出所有检测到标志球的时刻以及当时时刻标志球的坐标集合
+# 此处还没有进行任何基于相对位置与形状的筛选
+# 还需要进一步进行聚类、基于模式识别进行筛选
+def get_border_based_indexer(folder: str) -> dict:
+    assert os.path.isdir(folder)
+    min_val, max_val = get_min_max_value_of_log_dataset_folder(folder)
+    aided_matrix = get_raw_aided_matrix_for_log_znorm_in_folder(folder)
+    aided_matrix[aided_matrix <= AIDED_THRESH] = 0
+    aided_matrix *= arc_mask.get_arch()
+    dic = {}
+    fileset = os_interface.dir_file_scan(folder, ".dcm")
+    for index in tqdm(range(len(fileset))): # 在每张图片中进行初步筛选
+        dic[index] = []
+        file = fileset[index]
+        np_array = get_log_znorm_numpy_array_from_dcm_file(file, min_val, max_val)
+        np_array = get_aided_neighbout_var(np_array, aided_matrix)
+        if flood_fill.check_circle_exist(1 - np_array, get_log_numpy_array_from_dcm_file(file)): # 找到了指定连通区域
+            dic[index] = flood_fill.get_all_xy_center_coord_list(1 - np_array, get_log_numpy_array_from_dcm_file(file))
+    return dic
+
 # ------------------------------ 以下内容不得用于生产环境 ------------------------------ #
 
 # 由于我们只会在测试环境使用 matplotlib 因此不要直接引入它
@@ -160,14 +181,8 @@ def show_debug_dcm_file(dcm_file_path: str):
 # 不要在生产环境中使用此功能
 def show_debug_all_file_in_folder(folder: str):
     assert os.path.isdir(folder)
-    show_debug_numpy_array(arc_mask.get_arch())
-    min_val, max_val = get_min_max_value_of_log_dataset_folder(folder)
-    aided_matrix = get_raw_aided_matrix_for_log_znorm_in_folder(folder)
-    aided_matrix[aided_matrix <= AIDED_THRESH] = 0
-    aided_matrix *= arc_mask.get_arch()
-    show_debug_numpy_array(aided_matrix)
-    for index, file in enumerate(os_interface.dir_file_scan(folder, ".dcm")):
-        np_array = get_log_znorm_numpy_array_from_dcm_file(file, min_val, max_val)
-        np_array = get_aided_neighbout_var(np_array, aided_matrix)
-        print(index)
-        flood_fill.show_flood_fill(1 - np_array, get_log_numpy_array_from_dcm_file(file))
+    index_to_coord_set_map = get_border_based_indexer(folder)
+    for index in index_to_coord_set_map:
+        coord_set = index_to_coord_set_map[index]
+        if len(coord_set) > 0:
+            print("found", len(coord_set), "object", "at", index)
