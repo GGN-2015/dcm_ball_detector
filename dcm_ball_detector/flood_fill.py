@@ -1,12 +1,7 @@
 import numpy as np
-from .arc_mask import get_arch
-
-try:
-    import matplotlib.pyplot as plt
-except:
-    pass
-
 from scipy.ndimage import label
+
+from . import matplotlib_utils
 
 # 合法的面积区间
 MIN_CIRCLE_AREA = 100
@@ -84,14 +79,4 @@ def get_all_xy_center_coord_list(numpy_array, raw_image) -> list:
 def show_flood_fill(numpy_array, raw_image):
     labeled_array = get_numbered_flood_fill(numpy_array, raw_image)
     if check_circle_exist(numpy_array, raw_image):
-        plt.figure(figsize=(17, 9))
-        plt.subplot(1, 3, 1)
-        plt.title('Original Image')
-        plt.imshow(numpy_array, cmap='gray')
-        plt.subplot(1, 3, 2)
-        plt.title('Labeled Image')
-        plt.imshow(labeled_array, cmap='nipy_spectral')
-        plt.subplot(1, 3, 3)
-        plt.title('Raw Image')
-        plt.imshow(raw_image, cmap='gray')
-        plt.show()
+        matplotlib_utils.show_three_image_in_one_line(numpy_array, labeled_array, raw_image)

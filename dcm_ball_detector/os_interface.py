@@ -13,6 +13,7 @@ def clear_log_image():
     os.mkdir(LOG_IMAGE_FOLDER) # 重新创建这个文件夹
 
 # 获取文件夹中的所有具有指定拓展名的简单文件
+# 不含目录
 @functools.cache
 def dir_file_scan(filepath: str, suffix: str) -> list: 
     assert os.path.isdir(filepath)
@@ -24,8 +25,14 @@ def dir_file_scan(filepath: str, suffix: str) -> list:
     assert len(arr) > 0
     return sorted(arr)
 
+# 获取一个文件夹中的全部 dcm 文件
+@functools.cache
+def get_all_dcm_file_in_folder(folder: str) -> list:
+    return dir_file_scan(folder, ".dcm")
+
 # 获取一个文件夹中的所有 dcm 文件并按照文件名字典序排序
 # 然后从中取某个出来
+@functools.cache
 def get_dcm_filename_by_index(index, folder) -> str:
-    files = dir_file_scan(folder, ".dcm")
+    files = get_all_dcm_file_in_folder(folder)
     return files[index]
