@@ -5,6 +5,10 @@ import shutil
 # 当前脚本所在目录
 DIRNOW           = os.path.dirname(os.path.abspath(__file__))
 LOG_IMAGE_FOLDER = os.path.join(DIRNOW, "log_image")
+POS_IMAGE        = os.path.join(DIRNOW, "ground_truth", "pos")
+NEG_IMAGE        = os.path.join(DIRNOW, "ground_truth", "neg")
+INNER_POS_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "pos")
+INNER_NEG_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "neg")
 
 # 保证当前脚本所在目录下有一个空文件夹名为 log_image
 def clear_log_image():

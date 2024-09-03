@@ -15,8 +15,11 @@ def create_image_from_log_numpy_array(log_numpy_array):
     arr = log_numpy_array.copy()
     min_val = np.min(arr) # 确保数组值在 0 到 1 之间
     max_val = np.max(arr)
-    scaled_arr = (arr - min_val) / (max_val - min_val)
-    gray_image = (scaled_arr * 255).astype(np.uint8) # 将缩放后的数组转换为 0-255 的灰度图
+    if max_val != min_val:
+        scaled_arr = (arr - min_val) / (max_val - min_val)
+        gray_image = (scaled_arr * 255).astype(np.uint8) # 将缩放后的数组转换为 0-255 的灰度图
+    else:
+        gray_image = np.zeros(log_numpy_array.shape).astype(np.uint8) # 考虑特判空白图片
     image = Image.fromarray(gray_image, mode='L') # 使用 Pillow 创建图像
     return image
 
@@ -38,5 +41,5 @@ def create_image_from_log_numpy_array_with_center_coord_list(log_numpy_array, co
 def save_image_to_log_folder(image):
     assert os.path.isdir(os_interface.LOG_IMAGE_FOLDER)
     new_index = len(os.listdir(os_interface.LOG_IMAGE_FOLDER)) + 1                  # 申请一个新的编号
-    filename  = os.path.join(os_interface.LOG_IMAGE_FOLDER, "%04d.png" % new_index) # 获得新文件的文件路径
+    filename  = os.path.join(os_interface.LOG_IMAGE_FOLDER, "%07d.png" % new_index) # 获得新文件的文件路径
     image.save(filename)

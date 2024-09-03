@@ -4,6 +4,8 @@ import functools
 
 from . import os_interface
 from . import dcm_interface
+from . import convolve_utils
+from . import gen_circ
 
 # 采样盒子在三个方向上各自的半径
 T_RADIUS = 18
@@ -58,3 +60,47 @@ def get_box_range(tnow: int, xnow: int, ynow: int):
 def get_cube_from_log_numpy_list_in_folder_around_center(folder:str, tnow:int, xnow:int, ynow:int):
     tmin, tmax,xmin, xmax, ymin, ymax = get_box_range(tnow, xnow, ynow)
     return get_cube_from_log_numpy_list_in_folder(folder, tmin, tmax, xmin, xmax, ymin, ymax)
+
+# 获取所有可能成为标志物的立方体截图
+# 同时记录立方体的角点坐标
+def get_all_cube_from_folder(folder:str) -> list:
+    index_to_coord_set_map = dcm_interface.get_border_based_indexer(folder)
+    index_list = []
+    for index in index_to_coord_set_map: # 获取所有图像中的识别情况，得到的数据中包含识别出的类似物中心
+        index_list.append(index)
+    dataset = []
+    for i in range(len(index_list)):
+        index = index_list[i]
+        if len(index_to_coord_set_map[index]) > 0: # 说明能够找到至少一个类似物
+            for (center_x, center_y) in index_to_coord_set_map[index]:
+                box_rng = get_box_range(index, center_x, center_y)
+                image3d = get_cube_from_log_numpy_list_in_folder_around_center(folder, index, center_x, center_y)
+                dataset.append({
+                    "box_rng": box_rng,
+                    "image3d": image3d # numpy array 3d: 36x36x36
+                })
+    return dataset
+
+# 把所有立方体拆分成独立的图片
+def get_all_detected_picture_from_folder(folder: str):
+    dataset = get_all_cube_from_folder(folder)
+    new_dataset = []
+    for item in dataset:
+        box_rng = item["box_rng"]
+        image3d = item["image3d"]
+        tmin, tmax, xmin, xmax, ymin, ymax = box_rng
+        for t in range(0, tmax - tmin):
+            image2d = image3d[t] # 截取一张图片
+            new_dataset.append({
+                "timenow": t + tmin,
+                "box_rng": (xmin, xmax, ymin, ymax), # 二维意义下的图像坐标
+                "image2d": image2d
+            })
+    return new_dataset
+
+# 把所有立方体拆分成图像，并且按照与标准圆的距离从小到大排序
+# 与标准圆距离越小排名越靠前
+def get_all_detected_picture_from_folder_and_sort(folder: str):
+    dataset       = get_all_detected_picture_from_folder(folder)
+    standard_circ = gen_circ.gen_standard_circ()
+    return sorted(dataset, key=lambda item: convolve_utils.get_matrix_distance(item["image2d"], standard_circ))
