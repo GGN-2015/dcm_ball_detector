@@ -1,4 +1,5 @@
 from . import dcm_interface
+from . import os_interface
 
 # 别急，还没好好改，仅供测试
 # 我劝你们不要看到绝对路径就骂人，我现在原型还没写好呢！！！！
@@ -7,5 +8,6 @@ FOLDER2 = "/run/media/neko/Archive_001/Archive/2024-09-02 DogCT/20240103/XH-1-01
 FOLDER3 = "/run/media/neko/Archive_001/Archive/2024-09-02 DogCT/20240116/XH-001_20240116-135807-1914_140417/0.625 x 0.625_401/"
 FOLDER4 = "/run/media/neko/Archive_001/Archive/2024-09-02 DogCT/20240117/XH-001_20240117-161233-1918_161310/0.625 x 0.625_201/"
 
+os_interface.clear_log_image() # 清空日志文件夹
 for folder in [FOLDER1, FOLDER2, FOLDER3, FOLDER4]:
-    dcm_interface.show_debug_all_file_in_folder(folder)
+    dcm_interface.preprocess_all_file_in_folder_and_dump_log(folder)

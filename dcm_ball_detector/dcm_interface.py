@@ -9,6 +9,8 @@ from . import circ_utils
 from . import convolve_utils
 from . import flood_fill
 from . import arc_mask
+from . import image_log
+from . import stderr_log
 
 # 用于调用操作系统相关的接口
 from . import os_interface
@@ -20,7 +22,9 @@ MATCH_CIRC_THRESH   = 80
 
 from .flood_fill import BALL_MATERIAL, BALL_MATERIAL_DELTA
 
-def get_neighbour_var(numpy_array): # 计算邻域方差矩阵并二值化
+# 计算邻域方差矩阵并二值化
+# 借此实现边界识别
+def get_neighbour_var(numpy_array): 
     assert len(numpy_array.shape) == 2
     mean         = uniform_filter(numpy_array     , size=DEFAULT_WINDOW_SIZE)
     mean_squared = uniform_filter(numpy_array ** 2, size=DEFAULT_WINDOW_SIZE)
@@ -59,11 +63,13 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
 
 # 读入一个 dcm 文件，返回一个对数化后的 numpy array 数据
 # 这里根据材质进行了一次筛选
+# 为了防止额外的空洞产生，我们在此处只对材质 < BALL_MATERIAL - BALL_MATERIAL_DELTA 的位置进行了去除
+# 而没有对材质大于 BALL_MATERIAL + BALL_MATERIAL_DELTA 的位置进行去除
+@functools.cache
 def get_log_numpy_array_from_dcm_file(filepath: str):
     assert os.path.isfile(filepath)
     log_numpy_array = np.log(get_raw_numpy_array_from_dcm_file(filepath)[0] + 1)
     log_numpy_array[log_numpy_array < BALL_MATERIAL - BALL_MATERIAL_DELTA] = 0
-    # log_numpy_array[log_numpy_array > BALL_MATERIAL + BALL_MATERIAL_DELTA] = 0
     return log_numpy_array
 
 # 读入一个 dcm 文件，返回一个先对数化，再 Z 正则化的 numpy array 数据
@@ -73,23 +79,17 @@ def get_log_znorm_numpy_array_from_dcm_file(filepath: str, min_val: float, max_v
     new_numpy_array = (old_numpy_array - min_val) / (max_val - min_val)
     return new_numpy_array
 
-# 对 znorm 的结果进行二值化
-# def get_log_znorm_bin_numpy_array_from_dcm_file(filepath: str, min_val: float, max_val: float, thresh: float):
-#     assert os.path.isfile(filepath)
-#     assert 0 < thresh < 1
-#     numpy_array = get_log_znorm_numpy_array_from_dcm_file(filepath, min_val, max_val).copy()
-#     numpy_array[numpy_array <= thresh] = 0
-#     numpy_array[numpy_array  > thresh] = 1
-#     return numpy_array
-
 # 给定一个文件夹，读取文件夹中的所有 dcm 文件
 # 然后获取这些 dcm 文件中的所有 numpy array 中的 min 和 max 值
+@functools.cache
 def get_min_max_value_of_log_dataset_folder(folder: str):
     assert os.path.isdir(folder)
     file_list = os_interface.dir_file_scan(folder, ".dcm") # 被扫描的文件集合
     min_list  = []
     max_list  = []
-    for file in file_list:
+    stderr_log.log_info("dcm_ball_detector: preprocessing log numpy array.")
+    for index in tqdm(range(len(file_list))):
+        file    = file_list[index]
         min_now = (np.amin(get_log_numpy_array_from_dcm_file(file)))
         max_now = (np.amax(get_log_numpy_array_from_dcm_file(file)))
         min_list.append(min_now)
@@ -128,9 +128,10 @@ def get_border_based_indexer(folder: str) -> dict:
     min_val, max_val = get_min_max_value_of_log_dataset_folder(folder)
     aided_matrix = get_raw_aided_matrix_for_log_znorm_in_folder(folder)
     aided_matrix[aided_matrix <= AIDED_THRESH] = 0
-    aided_matrix *= arc_mask.get_arch()
+    # aided_matrix *= arc_mask.get_arch() # 2024-09-03 暂时去掉赦免区域
     dic = {}
     fileset = os_interface.dir_file_scan(folder, ".dcm")
+    stderr_log.log_info("dcm_ball_detector: generating border based index.")
     for index in tqdm(range(len(fileset))): # 在每张图片中进行初步筛选
         dic[index] = []
         file = fileset[index]
@@ -150,6 +151,7 @@ except:
     pass
 
 # 显示一个 512x512 的矩阵，每个位置为该位置随时间变化的的极差
+# 用于计算静态豁免：即如果 CT 图像中某个像素亮度随时间变化的极差十分小，那么这个位置不可能是标志物
 def show_raw_aided_matrix_for_folder(folder: str, thresh: float):
     assert 0 < thresh < 1
     range_matrix = get_raw_aided_matrix_for_log_znorm_in_folder(folder)
@@ -167,22 +169,27 @@ def show_debug_numpy_array(numpy_array):
 def show_debug_dcm_file(dcm_file_path: str):
     assert os.path.isfile(dcm_file_path) # 检查文件是否存在
     dataset = pydicom.dcmread(dcm_file_path)
-
     min_value   = np.min(dataset.pixel_array) # 保证正值
     pixel_array = dataset.pixel_array.copy() - min_value
-    pixel_array = np.log(pixel_array + 1)
-
-    new_min_value = np.min(pixel_array) # Z 正则化
+    pixel_array = np.log(pixel_array + 1) # 取对数
+    new_min_value = np.min(pixel_array)   # 0~1 正则化
     new_max_value = np.max(pixel_array)
     pixel_array   = (pixel_array - new_min_value) / (new_max_value - new_min_value)
     show_debug_numpy_array(pixel_array)
 
 # 依次输出每张图片，测试某个文件中的所有 dcm 文件，对数据进行必要的二值化
 # 不要在生产环境中使用此功能
-def show_debug_all_file_in_folder(folder: str):
+def preprocess_all_file_in_folder_and_dump_log(folder: str):
     assert os.path.isdir(folder)
     index_to_coord_set_map = get_border_based_indexer(folder)
-    for index in index_to_coord_set_map:
-        coord_set = index_to_coord_set_map[index]
-        if len(coord_set) > 0:
-            print("found", len(coord_set), "object", "at", index)
+    index_list = []
+    for index in index_to_coord_set_map: # 获取所有图像中的识别情况，得到的数据中包含识别出的类似物中心
+        index_list.append(index)
+    stderr_log.log_info("dcm_ball_detector: dumping image log into log folder.")
+    for i in tqdm(range(len(index_list))):
+        index = index_list[i]
+        coord_list = index_to_coord_set_map[index]
+        if len(coord_list) > 0: # 绘制给人看的辅助视图，并将辅助视图存储进日志文件夹
+            filename = os_interface.get_dcm_filename_by_index(index, folder)
+            image = image_log.create_image_from_log_numpy_array_with_center_coord_list(get_log_numpy_array_from_dcm_file(filename), coord_list)
+            image_log.save_image_to_log_folder(image)

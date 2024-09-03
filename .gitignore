@@ -1,3 +1,5 @@
+dcm_ball_detector/log_image/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

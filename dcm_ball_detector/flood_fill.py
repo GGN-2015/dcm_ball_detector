@@ -10,7 +10,7 @@ from scipy.ndimage import label
 
 # 合法的面积区间
 MIN_CIRCLE_AREA = 100
-MAX_CIRCLE_AREA = 400
+MAX_CIRCLE_AREA = 500
 MIN_D = 11
 MAX_D = 23
 MAX_DIF = 3 # 限制横纵坐标延伸长度差距
@@ -35,10 +35,10 @@ def check_approx_circle(x_coords, y_coords):
 # 给定一个零一矩阵，假设零是墙壁，一是空洞，返回填后的连通情况，同一连同快
 def get_numbered_flood_fill(numpy_array, raw_image):
     labeled_array, ncnt = label(numpy_array)
-    check_is_ball = np.zeros(numpy_array.shape) # 增加一个额外掩码
+    check_is_ball = np.zeros(numpy_array.shape) # 增加一个额外掩码，用于进行材质性检查
     check_is_ball[raw_image >= BALL_MATERIAL - BALL_MATERIAL_DELTA] = 1
     check_is_ball[raw_image >= BALL_MATERIAL + BALL_MATERIAL_DELTA] = 0
-    labeled_array = labeled_array * check_is_ball * get_arch()
+    labeled_array = labeled_array * check_is_ball # * get_arch() # 2024-09-03 暂时去掉赦免区域
     for i in range(1, ncnt+1):
         if not (MIN_CIRCLE_AREA <= np.sum((labeled_array == i)) <= MAX_CIRCLE_AREA):
             labeled_array[labeled_array == i] = -1 # deleted
@@ -73,12 +73,10 @@ def get_all_xy_center_coord_list(numpy_array, raw_image) -> list:
     assert len(unique_elements) > 2
     arr = []
     for val, cnt in zip(unique_elements, counts): # 拿来所有有序对
-        coord_set = []
         if val not in [-1, 0]:
             xcoords, ycoords = get_coord_list_from_labeled_array(labeled_array, val)
             assert len(xcoords) == cnt and len(ycoords) == cnt
-            coord_set.append(get_center_position(xcoords, ycoords))
-        arr.append(coord_set)
+            arr.append(get_center_position(xcoords, ycoords))
     return arr
 
 # 用于测试
