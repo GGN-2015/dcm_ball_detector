@@ -19,19 +19,24 @@ def get_available_svm():
     svm_2 = svm_utils.get_svm_predictor(INNER_POS_IMAGE, INNER_NEG_IMAGE, False, "for period detect")
     return svm_1, svm_2
 
-# 对 36x36 的 log 对数数据进行预测
-# 使用两个 svm 进行二分类
-def get_prediction_on_log_numpy_array(log_numpy_array):
+# 使用二层 svm 对图像进行分类
+def svm_checker(log_numpy_array) -> str:
     svm1, svm2  = get_available_svm()
     image       = image_log.create_image_from_log_numpy_array(log_numpy_array)
     numpy_array = np.array(image)
     assert numpy_array.shape == log_numpy_array.shape
     numpy_array = numpy_array.flatten()
     if svm1.predict([numpy_array])[0] == 1: # 说明外层 svm 呈阴性
-        return False
+        return "is_not_ball"
     if svm2.predict([numpy_array])[0] == 1: # 说明内层 svm 呈阴性
-        return False
-    return True # 说明内层外层都呈现阳性
+        return "is_small_ball"
+    return "is_large_ball" # 说明内层外层都呈现阳性
+
+# 对 36x36 的 log 对数数据进行预测
+# 使用两个 svm 进行二分类，仅用于对大球的识别
+def get_prediction_on_log_numpy_array(log_numpy_array):
+    tag = svm_checker(log_numpy_array)
+    return (tag == "is_large_ball")
 
 # 寻找所有可能成为标志物的时刻以及矩形框
 # 在先前筛选的基础上，进一步引入 SVM 进行筛选

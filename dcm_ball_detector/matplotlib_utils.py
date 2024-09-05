@@ -40,14 +40,18 @@ def generate_random_string(length):
 
 # 给定一个 36xPxQ 的矩阵
 # 把他以 6x6 的图片形式输出到屏幕上
-def show_6x6_numpy_array(single_numpy_array, save=False, show=True):
+# color_selector 用于根据具体图片选择合适的颜色模式以供图片的展示
+def show_6x6_numpy_array(single_numpy_array, save=False, show=True, color_selector=None):
     assert len(single_numpy_array.shape) == 3
     tlen, xlen, ylen = single_numpy_array.shape
     assert tlen == 36 # 不支持其他值的处理
     fig, axs = plt.subplots(6, 6, figsize=(15, 15)) # 设置图像堆叠方式
     for i in range(6):
         for j in range(6):
-            axs[i, j].imshow(single_numpy_array[i * 6 + j], cmap="gray")
+            if color_selector is None:
+                axs[i, j].imshow(single_numpy_array[i * 6 + j], cmap="Grays")
+            else:
+                axs[i, j].imshow(single_numpy_array[i * 6 + j], cmap=color_selector(single_numpy_array[i * 6 + j]))
     plt.tight_layout() # 调整子图间距
     if show: # 是否输出到屏幕
         plt.show()

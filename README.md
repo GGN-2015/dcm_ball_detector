@@ -40,6 +40,7 @@ python3 -m dcm_ball_detector # 运行检测程序
 
 <img src="./img/img_process.png" style="width: 400px">
 
+- 其中绿色图像表示该图像被识别为 “标志物的大球阶段”，蓝色图像表示该图像被识别为 “标志物的小球阶段”。
 - 第二类图片展示了某个标志物中心点出现在 CT 断层中的那个时刻的影像，并用红色的圆将其中的标志物圈出，例如：
 
 <img src="./img/img_dcm.png" style="width: 400px">

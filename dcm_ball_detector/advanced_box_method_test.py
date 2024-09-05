@@ -37,11 +37,23 @@ def svm_check_all_file_in_folder_and_dump_log(folder: str):
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, coord_dict[timenow])
         image_log.save_image_to_log_folder(image)
 
+# 根据不同的类别选择颜色模式，以形象地展示识别效果
+def select_color_with_checker(checker, image2d):
+    tag = checker(image2d)
+    if tag == "is_not_ball": # 灰色显示不是球的东西
+        return "Grays"
+    elif tag == "is_small_ball": # 蓝色显示小球
+        return "Blues"
+    elif tag == "is_large_ball": # 绿色显示大球
+        return "Greens"
+    else:
+        assert False # tag not found
+
 # 选择一个指定的 36x36x36 的区域
-# 将其展示到屏幕
-def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y):
+# 保存到日志文件夹
+def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y, checker):
     image3d = cube_get.get_cube_from_log_numpy_list_in_folder_around_center(folder, index, center_x, center_y)
-    matplotlib_utils.show_6x6_numpy_array(image3d, save=True, show=False)
+    matplotlib_utils.show_6x6_numpy_array(image3d, save=True, show=False, color_selector=lambda image2d: select_color_with_checker(checker, image2d))
 
 # 对检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
 # 看起来精度已经很准很准了，不知道后续还是否需要继续优化
@@ -57,5 +69,5 @@ def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
         log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, [(xpos, ypos)])
         image_log.save_image_to_log_folder(image)
-        save_6x6_sample_for_certain_cube(folder, time, xpos, ypos)
+        save_6x6_sample_for_certain_cube(folder, time, xpos, ypos, advanced_box_method.svm_checker)
     stderr_log.log_tips("relevant images in: %s" % os_interface.LOG_IMAGE_FOLDER)
