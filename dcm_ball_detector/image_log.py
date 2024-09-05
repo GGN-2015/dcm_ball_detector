@@ -42,4 +42,6 @@ def save_image_to_log_folder(image):
     assert os.path.isdir(os_interface.LOG_IMAGE_FOLDER)
     new_index = len(os.listdir(os_interface.LOG_IMAGE_FOLDER)) + 1                  # 申请一个新的编号
     filename  = os.path.join(os_interface.LOG_IMAGE_FOLDER, "%07d.png" % new_index) # 获得新文件的文件路径
+    if isinstance(image, str): # 字符串将会被视为一个外部已有的文件路径
+        image = Image.open(image) 
     image.save(filename)

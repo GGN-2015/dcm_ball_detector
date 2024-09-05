@@ -9,6 +9,17 @@ POS_IMAGE        = os.path.join(DIRNOW, "ground_truth", "pos")
 NEG_IMAGE        = os.path.join(DIRNOW, "ground_truth", "neg")
 INNER_POS_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "pos")
 INNER_NEG_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "neg")
+ROOT_DIR         = os.path.dirname(DIRNOW)
+ATTACHED_SAMPLE  = os.path.join(ROOT_DIR, "data_sample", "2023_01_03_0.625 x 0.625_501")
+
+# 删除普通文件
+def remove_file(filepath: str):
+    if os.path.isfile(filepath): # 如果文件存在
+        os.remove(filepath)
+
+# 检查外置测试数据是否存在
+def check_outer_sample_exist() -> bool:
+    return os.path.isdir(ATTACHED_SAMPLE)
 
 # 保证当前脚本所在目录下有一个空文件夹名为 log_image
 def clear_log_image():

@@ -37,11 +37,18 @@ def svm_check_all_file_in_folder_and_dump_log(folder: str):
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, coord_dict[timenow])
         image_log.save_image_to_log_folder(image)
 
-# 对所有检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
+# 选择一个指定的 36x36x36 的区域
+# 将其展示到屏幕
+def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y):
+    image3d = cube_get.get_cube_from_log_numpy_list_in_folder_around_center(folder, index, center_x, center_y)
+    matplotlib_utils.show_6x6_numpy_array(image3d, save=True, show=False)
+
+# 对检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
+# 看起来精度已经很准很准了，不知道后续还是否需要继续优化
 # 不要在生产环境中使用此功能
 def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
     ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
-    stderr_log.log_info("dumping %d images log into log folder." % len(ball_centers))
+    stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % len(ball_centers))
     for item in ball_centers:
         time = item["time"]
         xpos = item["xpos"]
@@ -50,3 +57,5 @@ def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
         log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, [(xpos, ypos)])
         image_log.save_image_to_log_folder(image)
+        save_6x6_sample_for_certain_cube(folder, time, xpos, ypos)
+    stderr_log.log_tips("relevant images in: %s" % os_interface.LOG_IMAGE_FOLDER)

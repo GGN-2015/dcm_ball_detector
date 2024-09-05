@@ -3,7 +3,6 @@ from tqdm import tqdm
 from . import cube_get
 from . import matplotlib_utils
 from . import image_log
-from . import os_interface
 from . import stderr_log
 
 # 从一个 CT 数据集中检测所有标志类似物，然后输出到屏幕

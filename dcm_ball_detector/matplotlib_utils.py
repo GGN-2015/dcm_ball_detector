@@ -1,3 +1,8 @@
+import random
+import string
+
+from . import os_interface
+from . import image_log
 
 # 由于我们只会在测试环境使用 matplotlib 因此不要直接引入它
 # 我们只在 show_debug_numpy_array 函数中使用了这个包
@@ -27,15 +32,29 @@ def show_three_image_in_one_line(numpy_array_1, numpy_array_2, numpy_array_3):
     plt.imshow(numpy_array_3, cmap='gray')
     plt.show()
 
+# 随机选择字符并生成字符串
+def generate_random_string(length):
+    characters = string.ascii_letters + string.digits + '_' + '-' # 定义字符集，包括字母、数字和下划线
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
+
 # 给定一个 36xPxQ 的矩阵
 # 把他以 6x6 的图片形式输出到屏幕上
-def show_6x6_numpy_array(single_numpy_array):
+def show_6x6_numpy_array(single_numpy_array, save=False, show=True):
     assert len(single_numpy_array.shape) == 3
-    tlen, xlen,ylen = single_numpy_array.shape
+    tlen, xlen, ylen = single_numpy_array.shape
     assert tlen == 36 # 不支持其他值的处理
     fig, axs = plt.subplots(6, 6, figsize=(15, 15)) # 设置图像堆叠方式
     for i in range(6):
         for j in range(6):
-            axs[i, j].imshow(single_numpy_array[i * 6 + j], cmap="gray")  # 绘制随机数据
+            axs[i, j].imshow(single_numpy_array[i * 6 + j], cmap="gray")
     plt.tight_layout() # 调整子图间距
-    plt.show()
+    if show: # 是否输出到屏幕
+        plt.show()
+    if save: # 是否保存到日志
+        try:
+            tmp_file_name = "dcm_ball_detector_%s.png" % generate_random_string(64)
+            plt.savefig(tmp_file_name)
+            image_log.save_image_to_log_folder(tmp_file_name)
+        finally:
+            os_interface.remove_file(tmp_file_name)

@@ -45,7 +45,7 @@ def get_svm_predictor(pos_folder, neg_folder, need_report=False, name=""):
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)  # 进行预测
     acc = accuracy_score(y_test, y_pred) # 计算准确率
-    stderr_log.log_info("getting svm with acc = %5.2f%%." % (100 * acc))
+    stderr_log.log_info("getting svm with acc = <<<32[%5.2f%%]>>>." % (100 * acc)) # green output
     assert acc >= SVM_ACC_THRESH # 低于 svm 准确率阈值直接报错，不要继续运行算法
     if need_report:
         print(classification_report(y_test, y_pred)) # 输出分类报告

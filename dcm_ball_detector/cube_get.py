@@ -43,7 +43,7 @@ def range_unify(vmin, vmax, l_bound, r_bound):
 
 # 给定中心点坐标
 # 获取采样坐标盒子
-def get_box_range(tnow: int, xnow: int, ynow: int):
+def get_box_range(tnow: int, xnow: int, ynow: int, max_x_range, max_y_range):
     tmin = tnow - T_RADIUS # 保证时间轴上总长度是完全平方数
     tmax = tnow + T_RADIUS # 以便于将来在水平面上对堆叠的图像进行展平
     xmin = xnow - X_RADIUS 
@@ -51,20 +51,22 @@ def get_box_range(tnow: int, xnow: int, ynow: int):
     ymin = ynow - Y_RADIUS
     ymax = ynow + Y_RADIUS
     tmin, tmax = range_unify(tmin, tmax, 0, None)
-    xmin, xmax = range_unify(xmin, xmax, 0, 512)
-    ymin, ymax = range_unify(ymin, ymax, 0, 512)
+    xmin, xmax = range_unify(xmin, xmax, 0, max_x_range)
+    ymin, ymax = range_unify(ymin, ymax, 0, max_y_range)
     return tmin, tmax, xmin, xmax, ymin, ymax
 
 # 指定中心点的时刻以及坐标，求一个附近的足够大的包围盒
 # 我们最好保证 t 坐标上的长度是完全平方数，以便于将来对该维度进行展开
 def get_cube_from_log_numpy_list_in_folder_around_center(folder:str, tnow:int, xnow:int, ynow:int):
-    tmin, tmax,xmin, xmax, ymin, ymax = get_box_range(tnow, xnow, ynow)
+    max_x_range, max_y_range = dcm_interface.get_max_xy_range_from_folder(folder)
+    tmin, tmax,xmin, xmax, ymin, ymax = get_box_range(tnow, xnow, ynow, max_x_range, max_y_range)
     return get_cube_from_log_numpy_list_in_folder(folder, tmin, tmax, xmin, xmax, ymin, ymax)
 
 # 获取所有可能成为标志物的立方体截图
 # 同时记录立方体的角点坐标
 def get_all_cube_from_folder(folder:str) -> list:
     index_to_coord_set_map = dcm_interface.get_border_based_indexer(folder)
+    max_x_range, max_y_range = dcm_interface.get_max_xy_range_from_folder(folder)
     index_list = []
     for index in index_to_coord_set_map: # 获取所有图像中的识别情况，得到的数据中包含识别出的类似物中心
         index_list.append(index)
@@ -73,7 +75,7 @@ def get_all_cube_from_folder(folder:str) -> list:
         index = index_list[i]
         if len(index_to_coord_set_map[index]) > 0: # 说明能够找到至少一个类似物
             for (center_x, center_y) in index_to_coord_set_map[index]:
-                box_rng = get_box_range(index, center_x, center_y)
+                box_rng = get_box_range(index, center_x, center_y, max_x_range, max_y_range)
                 image3d = get_cube_from_log_numpy_list_in_folder_around_center(folder, index, center_x, center_y)
                 dataset.append({
                     "box_rng": box_rng,
