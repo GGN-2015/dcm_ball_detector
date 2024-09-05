@@ -93,4 +93,11 @@ python3 -c 'import dcm_ball_detector; print(dcm_ball_detector.get_all_cluster_ce
 ## 有待完善的地方
 
 - 目前在标志球筛选的过程中仍有一定的假阳率，因此计划再跟据标志物从出现到消失的全过程试图进行一次筛选以进一步降低假阳率。
+- 在这里我们给出了一组假阳性的例子：
 
+<img src="./img/err_process.png" style="width: 400px">
+
+<img src="./img/err_dcm.png" style="width: 400px">
+
+- 可以看到，在位置上上述类似球的形状出现在 CT 图像中体内的部分，在过程上看，它的大球阶段与小球阶段都要远远短于正常的标记球。
+- 因此可以从以上两个思路解决假阳问题。
