@@ -10,4 +10,4 @@ FOLDER4 = "/run/media/neko/Archive_001/Archive/2024-09-02 DogCT/20240117/XH-001_
 
 os_interface.clear_log_image() # 清空日志文件夹
 for folder in [FOLDER1, FOLDER2, FOLDER3, FOLDER4]:
-    advanced_box_method_test.svm_check_all_file_in_folder_and_dump_log(folder)
+    advanced_box_method_test.svm_get_ball_centers_in_folder_and_dump_log(folder)

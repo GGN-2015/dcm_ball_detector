@@ -19,7 +19,7 @@ def show_all_cube_detected_in_folder(folder):
 # 然后根据其与标准圆的欧式距离排序，排序后将图片送入图像日志文件夹
 def dump_debug_sorted_pictures_to_log_folder(folder: str):
     sorted_item_list = cube_get.get_all_detected_picture_from_folder_and_sort(folder)
-    stderr_log.log_info("dcm_ball_detector: dumping sorted pictures to image log.")
+    stderr_log.log_info("dumping sorted pictures to image log.")
     for i in tqdm(range(len(sorted_item_list))):
         item    = sorted_item_list[i]
         timenow = item["timenow"] # 时间轴坐标

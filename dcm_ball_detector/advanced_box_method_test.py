@@ -22,7 +22,7 @@ def show_all_posible_box_in_folder(folder: str):
 # 不要在生产环境中使用此功能
 def svm_check_all_file_in_folder_and_dump_log(folder: str):
     item_list = advanced_box_method.get_all_posible_box_in_folder(folder)
-    stderr_log.log_info("dcm_ball_detector: dumping image log into log folder.")
+    stderr_log.log_info("dumping images log into log folder.")
     coord_dict = {}
     for i in range(len(item_list)):
         item          = item_list[i]
@@ -30,9 +30,23 @@ def svm_check_all_file_in_folder_and_dump_log(folder: str):
         box_rng       = item["box_rng"] # 记录时间空间坐标
         if coord_dict.get(timenow) is None: # 记录每个时刻所有圈圈的中点坐标
             coord_dict[timenow] = []
-        coord_dict[timenow].append((round((box_rng[0] + box_rng[1])/2), round((box_rng[2] + box_rng[3])/2)))# 计算坐标中点
+        coord_dict[timenow].append(advanced_box_method.get_center_pos_in_box_rng(box_rng))# 计算坐标中点
     for timenow in tqdm(coord_dict):
         filename      = os_interface.get_dcm_filename_by_index(timenow, folder)
         log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, coord_dict[timenow])
+        image_log.save_image_to_log_folder(image)
+
+# 对所有检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
+# 不要在生产环境中使用此功能
+def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
+    ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
+    stderr_log.log_info("dumping %d images log into log folder." % len(ball_centers))
+    for item in ball_centers:
+        time = item["time"]
+        xpos = item["xpos"]
+        ypos = item["ypos"]
+        filename      = os_interface.get_dcm_filename_by_index(time, folder)
+        log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
+        image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, [(xpos, ypos)])
         image_log.save_image_to_log_folder(image)

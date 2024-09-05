@@ -24,7 +24,7 @@ def preprocess_all_file_in_folder_and_dump_log(folder: str):
     index_list = []
     for index in index_to_coord_set_map: # 获取所有图像中的识别情况，得到的数据中包含识别出的类似物中心
         index_list.append(index)
-    stderr_log.log_info("dcm_ball_detector: dumping image log into log folder.")
+    stderr_log.log_info("dumping image log into log folder.")
     for i in tqdm(range(len(index_list))):
         index = index_list[i]
         coord_list = index_to_coord_set_map[index]

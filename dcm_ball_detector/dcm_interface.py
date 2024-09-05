@@ -52,7 +52,7 @@ def get_min_max_value_of_log_dataset_folder(folder: str):
     file_list = os_interface.get_all_dcm_file_in_folder(folder) # 被扫描的文件集合
     min_list  = []
     max_list  = []
-    stderr_log.log_info("dcm_ball_detector: preprocessing log numpy array.")
+    stderr_log.log_info("preprocessing log numpy array.")
     for index in tqdm(range(len(file_list))):
         file    = file_list[index]
         min_now = (np.amin(get_log_numpy_array_from_dcm_file(file)))
@@ -97,7 +97,7 @@ def get_border_based_indexer(folder: str) -> dict:
     # aided_matrix *= arc_mask.get_arch() # 2024-09-03 暂时去掉赦免区域
     dic = {}
     fileset = os_interface.get_all_dcm_file_in_folder(folder)
-    stderr_log.log_info("dcm_ball_detector: generating border based index.")
+    stderr_log.log_info("generating border based index.")
     for index in tqdm(range(len(fileset))): # 在每张图片中进行初步筛选，index 从零开始递增
         dic[index] = []
         file = fileset[index]

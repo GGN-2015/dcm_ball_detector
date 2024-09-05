@@ -1,8 +1,10 @@
 import os
 import numpy as np
+import functools
 from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 from skimage import io
 
 try:
@@ -10,10 +12,16 @@ try:
 except:
     import stderr_log
 
+SVM_ACC_THRESH = 0.96 # SVM 的准确率应该至少达到 96%
+
 # 指定两个装满图片的文件夹
 # 使用 rbf 核函数的支持向量机训练一个二分类器
-def get_svm_predictor(pos_folder, neg_folder, need_report=False):
-    stderr_log.log_info("preparing svm.")
+@functools.cache
+def get_svm_predictor(pos_folder, neg_folder, need_report=False, name=""):
+    if name == "":
+        stderr_log.log_info("preparing svm.")
+    else:
+        stderr_log.log_info("preparing svm %s." % name)
     images = [] # 加载图像和标签
     labels = []
     for filename in os.listdir(pos_folder): # 加载类别1图像
@@ -35,7 +43,10 @@ def get_svm_predictor(pos_folder, neg_folder, need_report=False):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) # 划分训练集和测试集
     classifier = svm.SVC(kernel='rbf', random_state=42) # 创建并训练支持向量机分类器
     classifier.fit(X_train, y_train)
-    y_pred = classifier.predict(X_test) # 进行预测
+    y_pred = classifier.predict(X_test)  # 进行预测
+    acc = accuracy_score(y_test, y_pred) # 计算准确率
+    stderr_log.log_info("getting svm with acc = %5.2f%%." % (100 * acc))
+    assert acc >= SVM_ACC_THRESH # 低于 svm 准确率阈值直接报错，不要继续运行算法
     if need_report:
         print(classification_report(y_test, y_pred)) # 输出分类报告
     return classifier
