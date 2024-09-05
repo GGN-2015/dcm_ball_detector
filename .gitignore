@@ -1,3 +1,7 @@
+# venv folder
+dcm_venv
+
+# log image folder
 dcm_ball_detector/log_image/*
 
 # Byte-compiled / optimized / DLL files
