@@ -36,7 +36,7 @@ python3 -m dcm_ball_detector # 运行检测程序
 
 - 在运行展示性用例后，您可以在 `项目根目录/dcm_ball_detector/log_image` 文件夹下看到若干张图片，这些图片即为识别到的标志物的中心时刻影像。
 
-- 其中包含两类图片，第一类图片展示了标志物随着 CT 断层的前进，从出现到消失的过程，例如：
+- 其中包含两类图片，第一类图片展示了标志物随着 CT 断层的前进，标记球从出现到消失的过程，例如：
 
 <img src="./img/img_process.png" style="width: 400px">
 
@@ -101,3 +101,4 @@ python3 -c 'import dcm_ball_detector; print(dcm_ball_detector.get_all_cluster_ce
 
 - 可以看到，在位置上上述类似球的形状出现在 CT 图像中体内的部分，在过程上看，它的大球阶段与小球阶段都要远远短于正常的标记球。
 - 因此可以从以上两个思路解决假阳问题。
+
