@@ -1,14 +1,16 @@
 # 基于 svm 的二次筛选过程
 import functools
-import numpy as np
+import json
 import math
+import numpy as np
 from . import svm_utils
 from . import image_log
 from . import cube_get
 from .os_interface import POS_IMAGE, NEG_IMAGE, INNER_POS_IMAGE, INNER_NEG_IMAGE
 
-MAX_DIS_TOLERANCE   = 10 # 最大认同距离
-MAX_TIME_TOLENRANCE = 4  # 最大认同时间间隔
+MAX_DIS_TOLERANCE   = 10  # 最大认同距离
+MAX_TIME_TOLENRANCE = 4   # 最大认同时间间隔
+MIN_LARGE_BALL_RATE = 0.2 # image3d 的 36 帧内容中，只要要有 20% 的大球，才会被认可为合法标志物
 
 # 根据预先准备的数据集学习识别标志物的方法
 # svm_1 用于区分一般图样和标志物图样
@@ -158,11 +160,41 @@ def get_cluster_set_center(cluser_frm: list) -> dict:
         "ypos": round(calculate_median(y_lis))
     }
 
+# 给定一个聚类的中心点
+# 返回这个聚类中心点对应的时空邻域中，有多少比例的时间片段被认为是大球
+@functools.cache
+def get_cluster_center_large_ball_rate(folder: str, time: int, xpos: int, ypos: int):
+    image3d = cube_get.get_cube_from_log_numpy_list_in_folder_around_center(folder, time, xpos, ypos)
+    tlen, xlen, ylen = image3d.shape
+    large_ball_cnt = 0
+    for i in range(tlen):
+        if svm_checker(image3d[i]) == "is_large_ball":
+            large_ball_cnt += 1
+    return round(large_ball_cnt/tlen, ndigits=4)
+
+# 给定一个已知可能成为聚类中心的点
+# 获取它的时空邻域 image3d 对象，检查大球的存在率
+# 如果小于一个指定的阈值，则认为是假阳
+def check_cluster_center_large_ball_rate_ok(folder: str, cluster_set_center):
+    time = cluster_set_center["time"]
+    xpos = cluster_set_center["xpos"]
+    ypos = cluster_set_center["ypos"]
+    return get_cluster_center_large_ball_rate(folder, time, xpos, ypos) >= MIN_LARGE_BALL_RATE
+
 # 获得所有聚类的中心点
 # 后期可能还需要进行进一步的坐标矫正，但是将来再说
-def get_all_cluster_center_in_folder(folder: str) -> list:
+# show_rate=True 用于展示时空邻域中的大圆比例
+def get_all_cluster_center_in_folder(folder: str, show_rate=False) -> list:
     cluster_set_frm = get_all_cluster_in_folder(folder)
     cluster_center_set = []
     for cluser_frm in cluster_set_frm: # 计算出每个聚类的中心点
-        cluster_center_set.append(get_cluster_set_center(cluser_frm))
+        cluster_set_center = get_cluster_set_center(cluser_frm)
+        if check_cluster_center_large_ball_rate_ok(folder, cluster_set_center): # 如果大圆率符合要求
+            time    = cluster_set_center["time"]
+            xpos    = cluster_set_center["xpos"]
+            ypos    = cluster_set_center["ypos"]
+            new_obj = json.loads(json.dumps(cluster_set_center))
+            if show_rate:
+                new_obj["rate"] = get_cluster_center_large_ball_rate(folder, time, xpos, ypos)
+            cluster_center_set.append(new_obj)
     return cluster_center_set

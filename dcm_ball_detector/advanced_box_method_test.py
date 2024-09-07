@@ -60,7 +60,7 @@ def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y, checker)
 # 不要在生产环境中使用此功能
 def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
     ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
-    stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % len(ball_centers))
+    stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % (len(ball_centers) * 2))
     for item in ball_centers:
         time = item["time"]
         xpos = item["xpos"]

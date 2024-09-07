@@ -57,6 +57,7 @@ def get_box_range(tnow: int, xnow: int, ynow: int, max_x_range, max_y_range):
 
 # 指定中心点的时刻以及坐标，求一个附近的足够大的包围盒
 # 我们最好保证 t 坐标上的长度是完全平方数，以便于将来对该维度进行展开
+@functools.cache
 def get_cube_from_log_numpy_list_in_folder_around_center(folder:str, tnow:int, xnow:int, ynow:int):
     max_x_range, max_y_range = dcm_interface.get_max_xy_range_from_folder(folder)
     tmin, tmax,xmin, xmax, ymin, ymax = get_box_range(tnow, xnow, ynow, max_x_range, max_y_range)
