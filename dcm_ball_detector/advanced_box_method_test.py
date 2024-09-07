@@ -38,6 +38,7 @@ def svm_check_all_file_in_folder_and_dump_log(folder: str):
         image_log.save_image_to_log_folder(image)
 
 # 根据不同的类别选择颜色模式，以形象地展示识别效果
+# 这里的 checker 实际上就是用 advanced_box_method.svm_checker
 def select_color_with_checker(checker, image2d):
     tag = checker(image2d)
     if tag == "is_not_ball": # 灰色显示不是球的东西

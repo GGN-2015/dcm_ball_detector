@@ -22,6 +22,7 @@ def get_available_svm():
     return svm_1, svm_2
 
 # 使用二层 svm 对图像进行分类
+# 区分三种不同状态：不是标志球，是标志球的小球阶段，是标志球的大球阶段
 def svm_checker(log_numpy_array) -> str:
     svm1, svm2  = get_available_svm()
     image       = image_log.create_image_from_log_numpy_array(log_numpy_array)
