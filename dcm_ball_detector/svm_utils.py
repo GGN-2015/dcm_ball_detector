@@ -14,6 +14,19 @@ except:
 
 SVM_ACC_THRESH = 0.96 # SVM 的准确率应该至少达到 96%
 
+# 递归获取文件夹中的所有文件
+# 用于读取 ground truth 数据
+@functools.cache
+def list_all_file_recursively_in_folder(folder: str) -> list:
+    arr = []
+    for file in os.listdir(folder):
+        file_now = os.path.join(folder, file)
+        if os.path.isdir(file_now):
+            arr += list_all_file_recursively_in_folder(file_now)
+        else:
+            arr.append(file_now)
+    return arr
+
 # 指定两个装满图片的文件夹
 # 使用 rbf 核函数的支持向量机训练一个二分类器
 @functools.cache
@@ -24,14 +37,14 @@ def get_svm_predictor(pos_folder, neg_folder, need_report=False, name=""):
         stderr_log.log_info("preparing svm %s." % name)
     images = [] # 加载图像和标签
     labels = []
-    for filename in os.listdir(pos_folder): # 加载类别1图像
+    for filename in list_all_file_recursively_in_folder(pos_folder): # 加载类别1图像
         if filename.endswith('.png'):
             img_path = os.path.join(pos_folder, filename)
             img = io.imread(img_path)
             img = img.flatten()  # 将36x36图像展平为一维数组
             images.append(img)
             labels.append(0)  # 类别1的标签为0
-    for filename in os.listdir(neg_folder): # 加载类别2图像
+    for filename in list_all_file_recursively_in_folder(neg_folder): # 加载类别2图像
         if filename.endswith('.png'):
             img_path = os.path.join(neg_folder, filename)
             img = io.imread(img_path)

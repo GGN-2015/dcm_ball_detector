@@ -30,10 +30,13 @@ def svm_checker(log_numpy_array) -> str:
     assert numpy_array.shape == log_numpy_array.shape
     numpy_array = numpy_array.flatten()
     if svm1.predict([numpy_array])[0] == 1: # 说明外层 svm 呈阴性
-        return "is_not_ball"
-    if svm2.predict([numpy_array])[0] == 1: # 说明内层 svm 呈阴性
-        return "is_small_ball"
-    return "is_large_ball" # 说明内层外层都呈现阳性
+        tag = "is_not_ball"
+    elif svm2.predict([numpy_array])[0] == 1: # 说明内层 svm 呈阴性
+        tag = "is_small_ball"
+    else:
+        tag = "is_large_ball" # 说明内层外层都呈现阳性
+    image_log.save_image_to_log_folder(image, subfolder=tag)
+    return tag
 
 # 对 36x36 的 log 对数数据进行预测
 # 使用两个 svm 进行二分类，仅用于对大球的识别

@@ -27,5 +27,7 @@ def preprocess_all_file_in_folder_and_dump_log(folder: str):
         log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
         image         = image_log.create_image_from_log_numpy_array(log_numpy_arr)
         if i == 0: # 用于测试
-            matplotlib_utils.show_debug_numpy_array(log_numpy_arr)
+            matplotlib_utils.show_debug_numpy_array(
+                dcm_interface.get_non_neg_numpy_array_from_dcm_file(filename)
+            )
         image_log.save_image_to_log_folder(image)

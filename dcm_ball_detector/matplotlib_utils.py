@@ -13,9 +13,10 @@ except:
     has_matplotlib = False
 
 # 仅用于测试，不要用于生产环境
-def show_debug_numpy_array(numpy_array):
+def show_debug_numpy_array(numpy_array, title="2darray"):
     if has_matplotlib:
         plt.imshow(numpy_array, cmap='gray') # 显示灰度影像
+        plt.title(title)
         plt.axis('off')  # 隐藏坐标轴
         plt.show()
 

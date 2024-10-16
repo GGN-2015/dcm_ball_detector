@@ -36,10 +36,15 @@ def create_image_from_log_numpy_array_with_center_coord_list(log_numpy_array, co
 
 # 将某个图片存放近日志文件夹
 # 编号从 1 开始自动递增
-def save_image_to_log_folder(image):
+def save_image_to_log_folder(image, subfolder=None):
     assert os.path.isdir(os_interface.LOG_IMAGE_FOLDER)
-    new_index = len(os.listdir(os_interface.LOG_IMAGE_FOLDER)) + 1                  # 申请一个新的编号
-    filename  = os.path.join(os_interface.LOG_IMAGE_FOLDER, "%07d.png" % new_index) # 获得新文件的文件路径
+    if subfolder is not None: # 用于约定子文件夹
+        aim_folder = os.path.join(os_interface.LOG_IMAGE_FOLDER, subfolder)
+        os.makedirs(aim_folder, exist_ok=True)
+    else:
+        aim_folder = os_interface.LOG_IMAGE_FOLDER
+    new_index = len(os.listdir(aim_folder)) + 1                  # 申请一个新的编号
+    filename  = os.path.join(aim_folder, "%07d.png" % new_index) # 获得新文件的文件路径
     if isinstance(image, str): # 字符串将会被视为一个外部已有的文件路径
         image = Image.open(image) 
     image.save(filename)

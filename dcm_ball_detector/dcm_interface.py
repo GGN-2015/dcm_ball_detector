@@ -3,6 +3,7 @@ import numpy as np
 import pydicom
 from tqdm import tqdm
 import functools
+import scipy
 
 from . import flood_fill
 from . import stderr_log
@@ -23,14 +24,23 @@ from .flood_fill import BALL_MATERIAL, BALL_MATERIAL_DELTA
 @functools.cache
 def get_raw_numpy_array_from_dcm_file(filepath: str):
     assert os.path.isfile(filepath)
-    dataset = pydicom.dcmread(filepath)
-    return (dataset.pixel_array.copy(), dataset)
+    dataset           = pydicom.dcmread(filepath)# 获取归一化因子（如果存在）
+    slice_thickness   = dataset.SliceThickness if 'SliceThickness' in dataset else 0.625
+    pixel_spacing     = dataset.PixelSpacing   if 'PixelSpacing'   in dataset else 0.625
+    size_rate         = np.array(pixel_spacing) / 0.68359375
+    thickness_rate    = slice_thickness / 0.625
+    rescale_slope     = (dataset.RescaleSlope     if 'RescaleSlope'     in dataset else     1.0)
+    rescale_intercept = (dataset.RescaleIntercept if 'RescaleIntercept' in dataset else -1024.0) * thickness_rate
+    original_matrix   = (dataset.pixel_array.copy() * rescale_slope + rescale_intercept) / thickness_rate
+    scaled_matrix     = scipy.ndimage.zoom(original_matrix, size_rate, order=3)
+    return (scaled_matrix, dataset)
 
 @functools.cache
 def get_non_neg_numpy_array_from_dcm_file(filepath: str):
     raw_numpy = get_raw_numpy_array_from_dcm_file(filepath)[0]
-    min_val   = float(np.min(raw_numpy))
-    return raw_numpy - min_val * np.ones(raw_numpy.shape)
+    raw_numpy = raw_numpy + 1024 # 写死
+    raw_numpy[raw_numpy <= 0] = 0
+    return raw_numpy
 
 # 读入一个 dcm 文件，返回一个对数化后的 numpy array 数据
 # 这里根据材质进行了一次筛选
