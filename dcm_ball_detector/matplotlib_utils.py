@@ -8,14 +8,16 @@ from . import image_log
 # 我们只在 show_debug_numpy_array 函数中使用了这个包
 try:
     import matplotlib.pyplot as plt
+    has_matplotlib = True
 except:
-    pass
+    has_matplotlib = False
 
 # 仅用于测试，不要用于生产环境
 def show_debug_numpy_array(numpy_array):
-    plt.imshow(numpy_array, cmap='gray') # 显示灰度影像
-    plt.axis('off')  # 隐藏坐标轴
-    plt.show()
+    if has_matplotlib:
+        plt.imshow(numpy_array, cmap='gray') # 显示灰度影像
+        plt.axis('off')  # 隐藏坐标轴
+        plt.show()
 
 # 并列显示三个灰度图
 # 用于展示三个 numpy array
