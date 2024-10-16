@@ -1,6 +1,7 @@
 import os
 import functools
 import shutil
+from . import stderr_log
 
 # 当前脚本所在目录
 DIRNOW           = os.path.dirname(os.path.abspath(__file__))
@@ -31,13 +32,18 @@ def clear_log_image():
 # 不含目录
 @functools.cache
 def dir_file_scan(filepath: str, suffix: str) -> list: 
-    assert os.path.isdir(filepath)
+    filepath = os.path.abspath(filepath)
+    if not os.path.isdir(filepath):
+        stderr_log.log_error("folder <<<33[%s]>>> not found." % filepath)
+        exit(1)
     arr = []
     for file in os.listdir(filepath):
         file_full_path = os.path.join(filepath, file)
         if os.path.isfile(file_full_path) and file_full_path.endswith(suffix):
             arr.append(file_full_path)
-    assert len(arr) > 0
+    if len(arr) == 0:
+        stderr_log.log_error("no dcm file found in folder <<<33[%s]>>>." % filepath)
+        exit(1)
     return sorted(arr)
 
 # 获取一个文件夹中的全部 dcm 文件

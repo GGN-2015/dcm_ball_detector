@@ -26,6 +26,12 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
     dataset = pydicom.dcmread(filepath)
     return (dataset.pixel_array.copy(), dataset)
 
+@functools.cache
+def get_non_neg_numpy_array_from_dcm_file(filepath: str):
+    raw_numpy = get_raw_numpy_array_from_dcm_file(filepath)[0]
+    min_val   = float(np.min(raw_numpy))
+    return raw_numpy - min_val * np.ones(raw_numpy.shape)
+
 # 读入一个 dcm 文件，返回一个对数化后的 numpy array 数据
 # 这里根据材质进行了一次筛选
 # 为了防止额外的空洞产生，我们在此处只对材质 < BALL_MATERIAL - BALL_MATERIAL_DELTA 的位置进行了去除
@@ -33,7 +39,7 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
 @functools.cache
 def get_log_numpy_array_from_dcm_file(filepath: str):
     assert os.path.isfile(filepath)
-    log_numpy_array = np.log(get_raw_numpy_array_from_dcm_file(filepath)[0] + 1)
+    log_numpy_array = np.log(get_non_neg_numpy_array_from_dcm_file(filepath) + 1)
     log_numpy_array[log_numpy_array < BALL_MATERIAL - BALL_MATERIAL_DELTA] = 0
     return log_numpy_array
 
@@ -72,7 +78,7 @@ def get_max_xy_range_from_folder(folder):
 @functools.cache
 def get_all_log_znorm_numpy_array_in_folder(folder: str) -> list:
     assert os.path.isdir(folder)
-    min_val, max_val = get_min_max_value_of_log_dataset_folder(folder)
+    min_val, max_val = 0.0, 8.75                                # 这个建议写死，避免材质大幅差异导致问题
     file_list = os_interface.get_all_dcm_file_in_folder(folder) # 被扫描的文件集合
     arr = []
     for file in file_list:

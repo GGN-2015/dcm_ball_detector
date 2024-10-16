@@ -20,16 +20,10 @@ def show_raw_aided_matrix_for_folder(folder: str, thresh: float):
 # 不要在生产环境中使用此功能
 def preprocess_all_file_in_folder_and_dump_log(folder: str):
     assert os.path.isdir(folder)
-    index_to_coord_set_map = dcm_interface.get_border_based_indexer(folder)
-    index_list = []
-    for index in index_to_coord_set_map: # 获取所有图像中的识别情况，得到的数据中包含识别出的类似物中心
-        index_list.append(index)
+    filecnt = len(os_interface.get_all_dcm_file_in_folder(folder))
     stderr_log.log_info("dumping image log into log folder.")
-    for i in tqdm(range(len(index_list))):
-        index = index_list[i]
-        coord_list = index_to_coord_set_map[index]
-        if len(coord_list) > 0: # 绘制给人看的辅助视图，并将辅助视图存储进日志文件夹
-            filename      = os_interface.get_dcm_filename_by_index(index, folder)
-            log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
-            image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, coord_list)
-            image_log.save_image_to_log_folder(image)
+    for i in tqdm(range(filecnt)):
+        filename      = os_interface.get_dcm_filename_by_index(i, folder)
+        log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
+        image         = image_log.create_image_from_log_numpy_array(log_numpy_arr)
+        image_log.save_image_to_log_folder(image)

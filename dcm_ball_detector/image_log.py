@@ -13,13 +13,11 @@ DEFAULT_RADIUS = 15
 # 我们需要将这个 log_numpy_array 转化在灰度图
 def create_image_from_log_numpy_array(log_numpy_array):
     arr = log_numpy_array.copy()
-    min_val = np.min(arr) # 确保数组值在 0 到 1 之间
-    max_val = np.max(arr)
-    if max_val != min_val:
-        scaled_arr = (arr - min_val) / (max_val - min_val)
-        gray_image = (scaled_arr * 255).astype(np.uint8) # 将缩放后的数组转换为 0-255 的灰度图
-    else:
-        gray_image = np.zeros(log_numpy_array.shape).astype(np.uint8) # 考虑特判空白图片
+    min_val = 0
+    max_val = 7.8 # 这里最好写死
+    scaled_arr = (arr - min_val) / (max_val - min_val)
+    gray_image = (scaled_arr * 255).astype(np.uint8) # 将缩放后的数组转换为 0-255 的灰度图
+    gray_image[gray_image > 255] = 255               # 确保缩放
     image = Image.fromarray(gray_image, mode='L') # 使用 Pillow 创建图像
     return image
 
