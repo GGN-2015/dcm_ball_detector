@@ -26,14 +26,17 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
     assert os.path.isfile(filepath)
     dataset           = pydicom.dcmread(filepath)# 获取归一化因子（如果存在）
     slice_thickness   = dataset.SliceThickness if 'SliceThickness' in dataset else 0.625
-    pixel_spacing     = dataset.PixelSpacing   if 'PixelSpacing'   in dataset else 0.625
+    pixel_spacing     = dataset.PixelSpacing   if 'PixelSpacing'   in dataset else 0.68359375
     size_rate         = np.array(pixel_spacing) / 0.68359375
     thickness_rate    = slice_thickness / 0.625
     rescale_slope     = (dataset.RescaleSlope     if 'RescaleSlope'     in dataset else     1.0)
     rescale_intercept = (dataset.RescaleIntercept if 'RescaleIntercept' in dataset else -1024.0) * thickness_rate
     original_matrix   = (dataset.pixel_array.copy() * rescale_slope + rescale_intercept) / thickness_rate
     scaled_matrix     = scipy.ndimage.zoom(original_matrix, size_rate, order=3)
-    return (scaled_matrix, dataset)
+    return (scaled_matrix, {
+        "slice_thickness": slice_thickness, # 切片厚度
+        "pixel_spacing": pixel_spacing      # 像素大小
+    })
 
 @functools.cache
 def get_non_neg_numpy_array_from_dcm_file(filepath: str):
