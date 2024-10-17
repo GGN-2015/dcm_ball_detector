@@ -11,7 +11,7 @@ NEG_IMAGE        = os.path.join(DIRNOW, "ground_truth", "neg")
 INNER_POS_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "pos")
 INNER_NEG_IMAGE  = os.path.join(DIRNOW, "ground_truth", "inner_pos", "neg")
 ROOT_DIR         = os.path.dirname(DIRNOW)
-ATTACHED_SAMPLE  = os.path.join(ROOT_DIR, "data_sample", "2023_01_03_0.625 x 0.625_501")
+ATTACHED_SAMPLE  = os.path.join(ROOT_DIR, "data_sample", "SE3")
 
 # 删除普通文件
 def remove_file(filepath: str):

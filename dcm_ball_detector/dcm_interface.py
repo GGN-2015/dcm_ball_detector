@@ -33,17 +33,35 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
     rescale_intercept = (dataset.RescaleIntercept if 'RescaleIntercept' in dataset else -1024.0) * thickness_rate
     original_matrix   = (dataset.pixel_array.copy() * rescale_slope + rescale_intercept) / thickness_rate
     scaled_matrix     = scipy.ndimage.zoom(original_matrix, size_rate, order=3)
+    resize_rate       = np.array([
+        original_matrix.shape[i] / scaled_matrix.shape[i] # 用于重新缩放回原始尺寸
+        for i in range(2)
+    ])
     return (scaled_matrix, {
         "slice_thickness": slice_thickness, # 切片厚度
-        "pixel_spacing": pixel_spacing      # 像素大小
+        "pixel_spacing"  : pixel_spacing,   # 像素大小
+        "resize_rate"    : resize_rate      # 用于缩放回原始大小所需要的比例变换
     })
 
+# 获取一个图像的非负修正矩阵
 @functools.cache
 def get_non_neg_numpy_array_from_dcm_file(filepath: str):
     raw_numpy = get_raw_numpy_array_from_dcm_file(filepath)[0]
     raw_numpy = raw_numpy + 1024 # 写死
     raw_numpy[raw_numpy <= 0] = 0
     return raw_numpy
+
+# 制定文件夹获取一个图像的元信息
+@functools.cache
+def get_metadata_from_dcm_file(filepath: str):
+    return get_raw_numpy_array_from_dcm_file(filepath)[1]
+
+# 制定文件夹获取一个图像的元信息
+@functools.cache
+def get_metadata_from_dcm_folder(folder: str):
+    dcm_file_list = os_interface.get_all_dcm_file_in_folder(folder)
+    assert len(dcm_file_list) > 0
+    return get_metadata_from_dcm_file(dcm_file_list[0]) # 我们假定文件夹中的所有图片具有相同的元信息
 
 # 读入一个 dcm 文件，返回一个对数化后的 numpy array 数据
 # 这里根据材质进行了一次筛选

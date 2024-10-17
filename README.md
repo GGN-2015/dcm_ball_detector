@@ -4,7 +4,7 @@ given a DCM format image sequence, identify the positions of all spherical marke
 ## prerequisites
 
 - `python>=3.12`
-- we strongly recommend that the scale of all DCM files involved in marker identification should be 0.625mm/pixel, although the algorithms in this project have some tolerance for other resolutions.
+- make sure that your dcm files are named under **alphabetical order**.
 
 ## usage
 
@@ -54,7 +54,7 @@ source dcm_venv/bin/activate # activate the virtual environment
 python3 -c 'import dcm_ball_detector; dcm_ball_detector.svm_get_ball_centers_in_folder_and_dump_log("<The folder where the target DCMs are located>")'
 ```
 
-- For example, you can use the following command to test the demonstration use case that comes with this project:
+- for example, you can use the following command to test the demonstration use case that comes with this project:
 
 ```bash
 cd "<root directory of the current repo>"
@@ -64,7 +64,7 @@ python3 -c 'import dcm_ball_detector; dcm_ball_detector.svm_get_ball_centers_in_
 
 ### run in release mode
 
-- Since generating log files is time-consuming in production code, if you just want to find the coordinates of each marker sphere and don't care about the log image, you can use commands like this:
+- since generating log files is time-consuming in production code, if you just want to find the coordinates of each marker sphere and don't care about the log image, you can use commands like this:
 
 ```bash
 cd "<root directory of the current repo>"
@@ -72,7 +72,7 @@ source dcm_venv/bin/activate # activate the virtual environment
 python3 -c 'import dcm_ball_detector; print(dcm_ball_detector.get_all_cluster_center_in_folder("<the target folder>"))'
 ```
 
-- For example, you can run the following to test (in release mode) the demonstration use case that comes with this repo:
+- for example, you can run the following to test (in release mode) the demonstration use case that comes with this repo:
 
 ```bash
 cd "<root directory of the current repo>"
@@ -80,11 +80,16 @@ source dcm_venv/bin/activate # activate the virtual environment
 python3 -c 'import dcm_ball_detector; print(dcm_ball_detector.get_all_cluster_center_in_folder("./data_sample/2023_01_03_0.625 x 0.625_501/"))'
 ```
 
-- The program will output something similar to the following:
+- the program will output something similar to the following:
 
 ```
 [{'time': 36, 'xpos': 86, 'ypos': 185}, {'time': 38, 'xpos': 80, 'ypos': 258}, {'time': 126, 'xpos': 112, 'ypos': 185}, {'time': 130, 'xpos': 105, 'ypos': 273}, {'time': 214, 'xpos': 166, 'ypos': 264}, {'time': 289, 'xpos': 202, 'ypos': 320}, {'time': 290, 'xpos': 176, 'ypos': 198}, {'time': 352, 'xpos': 212, 'ypos': 264}]
 ```
 
-- Where `time` indicates the CT slice number of the center of the landmark in all images (numbering starts from zero, and images are processed in ascending order according to the lexicographical order of the file names).
-- With the upper left corner of the image as the coordinate origin, the `x` coordinate is downward, and the `y` coordinate is rightward. The ordered pair `(xpos, ypos)` gives the approximate coordinates of the center point of the coordinate sphere in a certain frame of the image.
+- where `time` indicates the index number of the CT slice where the center of the marker in.
+- the ordered pair `(xpos, ypos)` gives the approximate coordinates of the center point of the marker in a certain frame of the image (and the unit is voxel).
+
+## other information
+- this repo is developed and tested under AOSC OS (also known as "安同 OS").
+  - and it's a debian-like linux distribution.
+  - see: https://wiki.aosc.io/

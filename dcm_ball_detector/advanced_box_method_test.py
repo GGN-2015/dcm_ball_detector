@@ -7,6 +7,7 @@ from . import stderr_log
 from . import os_interface
 from . import dcm_interface
 from . import image_log
+from . import calibration
 
 # 用于测试：展示识别到的正确的标志物区域形态
 def show_all_posible_box_in_folder(folder: str):
@@ -56,12 +57,9 @@ def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y, checker)
     image3d = cube_get.get_cube_from_log_numpy_list_in_folder_around_center(folder, index, center_x, center_y)
     matplotlib_utils.show_6x6_numpy_array(image3d, save=True, show=False, color_selector=lambda image2d: select_color_with_checker(checker, image2d))
 
-# 对检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
-# 看起来精度已经很准很准了，不知道后续还是否需要继续优化
-# 不要在生产环境中使用此功能
-def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
-    ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
-    stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % (len(ball_centers) * 2))
+# 已经完成了中心点检测的任务后
+# 为了方便人去检查中心点位置是否正确，输出一些相关图片到日志文件
+def dump_images_for_debug(ball_centers, folder):
     for item in ball_centers:
         time = item["time"]
         xpos = item["xpos"]
@@ -72,3 +70,12 @@ def svm_get_ball_centers_in_folder_and_dump_log(folder: str):
         image_log.save_image_to_log_folder(image)
         save_6x6_sample_for_certain_cube(folder, time, xpos, ypos, advanced_box_method.svm_checker)
     stderr_log.log_tips("relevant images in: %s" % os_interface.LOG_IMAGE_FOLDER)
+
+# 对检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
+# 看起来精度已经很准很准了，不知道后续还是否需要继续优化
+# 不要在生产环境中使用此功能
+def svm_get_ball_centers_in_folder_and_dump_log(folder: str) -> list:
+    ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
+    stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % (len(ball_centers) * 2))
+    dump_images_for_debug(ball_centers, folder)
+    return ball_centers # list of dict

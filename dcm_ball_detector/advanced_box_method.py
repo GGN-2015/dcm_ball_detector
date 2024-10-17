@@ -6,11 +6,14 @@ import numpy as np
 from . import svm_utils
 from . import image_log
 from . import cube_get
+from . import calibration
+from . import dcm_interface
+from . import stderr_log
 from .os_interface import POS_IMAGE, NEG_IMAGE, INNER_POS_IMAGE, INNER_NEG_IMAGE
 
-MAX_DIS_TOLERANCE   = 10  # 最大认同距离
-MAX_TIME_TOLENRANCE = 4   # 最大认同时间间隔
-MIN_LARGE_BALL_RATE = 0.2 # image3d 的 36 帧内容中，只要要有 20% 的大球，才会被认可为合法标志物
+MAX_DIS_TOLERANCE   = 10   # 最大认同距离
+MAX_TIME_TOLENRANCE = 4    # 最大认同时间间隔
+MIN_LARGE_BALL_RATE = 0.15 # image3d 的 36 帧内容中，只要要有 20% 的大球，才会被认可为合法标志物
 
 # 根据预先准备的数据集学习识别标志物的方法
 # svm_1 用于区分一般图样和标志物图样
@@ -201,4 +204,19 @@ def get_all_cluster_center_in_folder(folder: str, show_rate=False) -> list:
             if show_rate:
                 new_obj["rate"] = get_cluster_center_large_ball_rate(folder, time, xpos, ypos)
             cluster_center_set.append(new_obj)
+    return cluster_center_set
+
+# 计算出以毫米为单位的空间坐标信息
+# 然后再根据标志物配置信息调节标志物的相对顺序
+# !!! 未测试 !!!
+def get_all_marker_center_and_give_the_mm_coord_with_correct_order(marker_coord_matrix: np.ndarray, folder: str):
+    cluster_center_set   = get_all_cluster_center_in_folder(folder)
+    if len(cluster_center_set) != len(marker_coord_matrix):
+        stderr_log.log_error("mutiple marker sets or incomplete marker set are currently not supported.")
+        exit(1)
+    ct_marker_coord_list = calibration.space_transfer_all(
+        cluster_center_set,
+        dcm_interface.get_metadata_from_dcm_folder(folder)
+    )
+    calibration.get_best_marker_order(marker_coord_matrix, ct_marker_coord_list)
     return cluster_center_set
