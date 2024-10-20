@@ -6,7 +6,7 @@ given a `.dcm` format image sequence, identify the positions of all spherical ma
 - it is recommended that this module should be installed in a python virtual environment (venv).
 
 ```bash
-pip install dcm_ball_detector
+pip install dcm-ball-detector
 ```
 
 ## usage
