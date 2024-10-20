@@ -8,9 +8,6 @@ import numpy as np
 import sys
 import os
 
-# 只有当外置数据文件存在时，才可以进行基于外置数据文件的测试
-assert os_interface.check_outer_sample_exist()
-
 # 输出坐标相关信息，分析坐标球的相对顺序
 # 不要使用这个函数，目前只用于代码参考
 def output_coord_relevant_info(ball_centers, dcm_folder):

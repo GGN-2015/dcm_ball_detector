@@ -8,7 +8,7 @@ description = "given a .dcm format image sequence, identify the positions of all
 authors = [
     { name = "GGN_2015", email = "premierbob@qq.com" }
 ]
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
     "pydicom",
     "pylibjpeg",
