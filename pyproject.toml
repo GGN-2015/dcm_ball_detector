@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dcm_ball_detector"
+description = "given a .dcm format image sequence, identify the positions of all spherical markers from this image sequence."
+authors = [
+    { name = "GGN_2015", email = "premierbob@qq.com" }
+]
+version = "0.0.1"
+dependencies = [
+    "pydicom",
+    "pylibjpeg",
+    "pylibjpeg-libjpeg",
+    "tqdm",
+    "numpy",
+    "matplotlib",
+    "scipy",
+    "scikit-learn",
+    "scikit-image"
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = []

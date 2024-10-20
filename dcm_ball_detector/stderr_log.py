@@ -41,7 +41,7 @@ def log_error(msg):
     general_log("error", msg)
 
 # 向标准错误流写入警告
-def log_error(msg):
+def log_warning(msg):
     general_log("warning", msg)
 
 # 向标准错误流写入提示信息

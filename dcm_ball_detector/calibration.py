@@ -37,9 +37,9 @@ def space_transfer(time_x_y_dict: dict, dataset_meta_dict: dict) -> dict:
     # 请注意，由于我们的图片进行过 xy 缩放，所以一定要注意要使用缩放后的比例尺才行
     pixel_spacing   = dataset_meta_dict["resize_rate"] * dataset_meta_dict["pixel_spacing"]
     return {
-        "zmm": time * slice_thickness,
-        "xmm": xpos * pixel_spacing[0],
-        "ymm": ypos * pixel_spacing[1],
+        "zmm": float(time * slice_thickness ),
+        "xmm": float(xpos * pixel_spacing[0]),
+        "ymm": float(ypos * pixel_spacing[1]),
     }
 
 # 对一个 list 中的所有 time_x_y_dict 做 space_transfer

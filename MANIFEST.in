@@ -1,0 +1,6 @@
+prune   ./data_sample
+prune   ./dcm_venv
+prune   ./img
+graft   ./dcm_ball_detector
+exclude ./dcm_ball_detector/__pycache__/*
+exclude ./dcm_ball_detector/__pycache__/log_image/*

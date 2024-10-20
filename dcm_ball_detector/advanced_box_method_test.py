@@ -74,8 +74,9 @@ def dump_images_for_debug(ball_centers, folder):
 # 对检测到的标志物中心的帧进行圈圈处理，并将圈圈后的图片存入日志
 # 看起来精度已经很准很准了，不知道后续还是否需要继续优化
 # 不要在生产环境中使用此功能
-def svm_get_ball_centers_in_folder_and_dump_log(folder: str) -> list:
+def svm_get_ball_centers_in_folder_and_dump_log(folder: str, debug=True) -> list:
     ball_centers = advanced_box_method.get_all_cluster_center_in_folder(folder)
     stderr_log.log_info("dumping <<<32[%d]>>> images log into log folder." % (len(ball_centers) * 2))
-    dump_images_for_debug(ball_centers, folder)
+    if debug: # 输出用于调试的图片信息
+        dump_images_for_debug(ball_centers, folder)
     return ball_centers # list of dict
