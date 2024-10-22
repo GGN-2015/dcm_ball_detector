@@ -15,7 +15,7 @@ def get_marker_matrix_info(marker_coord_matrix: np.ndarray):
             vector2  = marker_coord_matrix[j]
             distance = np.sqrt(np.sum((vector1 - vector2) ** 2))
             arr.append(distance)
-    return np.array(arr) / np.min(arr)
+    return np.array(arr)
 
 def test_get_marker_matrix_info(): # 对距离计算函数进行测试
     sample_matrix = np.array([
@@ -87,6 +87,10 @@ def get_best_marker_order(standard_marker_coord_matrix: np.ndarray, ct_marker_co
         ))
     score_message = sorted(score_message)
     best_marker_matrix = score_message[0][1]
+
+    print(std_matrix_info) # 输出距离对比信息 DEBUG
+    print(get_marker_matrix_info(best_marker_matrix))
+
     return [
         {
             "zmm": float(best_marker_matrix[i][0]),

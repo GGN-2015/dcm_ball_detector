@@ -3,17 +3,24 @@ import functools
 import json
 import math
 import numpy as np
+from scipy.ndimage import label
+from scipy.spatial import ConvexHull
+from collections import Counter
+
 from . import svm_utils
 from . import image_log
 from . import cube_get
 from . import calibration
 from . import dcm_interface
 from . import stderr_log
+from . import matplotlib_utils
 from .os_interface import POS_IMAGE, NEG_IMAGE, INNER_POS_IMAGE, INNER_NEG_IMAGE
 
 MAX_DIS_TOLERANCE   = 10   # 最大认同距离
 MAX_TIME_TOLENRANCE = 4    # 最大认同时间间隔
 MIN_LARGE_BALL_RATE = 0.15 # image3d 的 36 帧内容中，只要要有 20% 的大球，才会被认可为合法标志物
+EMPTY_THRESH        = 5.5
+TRY_CENTER_RADIUS   = 5
 
 # 根据预先准备的数据集学习识别标志物的方法
 # svm_1 用于区分一般图样和标志物图样
@@ -179,6 +186,108 @@ def get_cluster_center_large_ball_rate(folder: str, time: int, xpos: int, ypos: 
             large_ball_cnt += 1
     return round(large_ball_cnt/tlen, ndigits=4)
 
+# 计算众数，如果有多个，任取一个
+def find_mode(data):
+    count = Counter(data)
+    mode = count.most_common(1)[0][0]
+    return mode
+
+# 计算中心点所在连通块的编号
+# 修正中心点可能为空白的情况
+def get_center_label_in_labled_array(center, labeled_array):
+    arr = []
+    for i in range(-TRY_CENTER_RADIUS, TRY_CENTER_RADIUS):
+        for j in range(-TRY_CENTER_RADIUS, TRY_CENTER_RADIUS):
+            arr.append(labeled_array[center[0] + i, center[1] + j])
+    return find_mode(arr)
+
+# 构建 AABB 包围盒
+def get_xyrange_from_hull(hull_array2d):
+    assert hull_array2d.shape[1] == 2
+    xmin, xmax, ymin, ymax = hull_array2d[0][0], hull_array2d[0][0], hull_array2d[0][1], hull_array2d[0][1]
+    for i in range(hull_array2d.shape[0]):
+        xmin = min(xmin, hull_array2d[i][0])
+        xmax = max(xmax, hull_array2d[i][0])
+        ymin = min(ymin, hull_array2d[i][1])
+        ymax = max(ymax, hull_array2d[i][1])
+    return xmin, xmax, ymin, ymax
+
+# 给定多边形的顶点信息，计算多边形的重心
+def compute_centroid(points):
+    x = points[:, 1]  # x 坐标
+    y = points[:, 0]  # y 坐标
+    n = len(points)
+    A   = 0.0  # 面积
+    C_x = 0.0  # 重心 x
+    C_y = 0.0  # 重心 y
+    for i in range(n):
+        j = (i + 1) % n  # 处理闭合多边形
+        factor = x[i] * y[j] - x[j] * y[i]
+        A += factor
+        C_x += (x[i] + x[j]) * factor
+        C_y += (y[i] + y[j]) * factor
+    A *= 0.5
+    C_x /= (6 * A)
+    C_y /= (6 * A)
+    return C_x, C_y
+
+# 返回修正性中心的偏移坐标，以像素单位长度为单位
+# 返回 0, 0 表示不偏移
+# 还没实现
+def get_fixed_xypos_for_image2d(image2d: np.ndarray):
+    labeled_array, num_features = label(image2d)
+    center              = (labeled_array.shape[0] // 2, labeled_array.shape[1] // 2)
+    center_label        = get_center_label_in_labled_array(center, labeled_array)
+    connected_component = np.argwhere(labeled_array == center_label)
+    hull        = ConvexHull(connected_component)    # 计算凸包
+    hull_points = connected_component[hull.vertices] # 获得凸包每个点的二维坐标
+    centroid    = compute_centroid(hull_points)      # 计算多边形重心
+    xmin, xmax, ymin, ymax = get_xyrange_from_hull(hull_points)
+    if (xmin < TRY_CENTER_RADIUS or 
+        ymin < TRY_CENTER_RADIUS or 
+        xmax >= image2d.shape[0] - TRY_CENTER_RADIUS or 
+        ymax >= image2d.shape[1] - TRY_CENTER_RADIUS): # 发现了连通块过大的情况
+        return None, None
+    xpos, ypos = centroid - np.array(center)
+    return np.array([[xpos], [ypos]]), hull.area # 返回新中心到旧中心的相对坐标
+
+# 修正 z 坐标信息
+def get_fixed_zpos_for_areas(areas):
+    x_data = []
+    y_data = []
+    for z in range(len(areas)): # 提取坐标点信息
+        if areas[z] is not None:
+            x_data.append(z)
+            y_data.append(areas[z])
+    coefficients = np.polyfit(x_data, y_data, 2)  # 拟合一个二次函数
+    a, b, c      = coefficients # 提取拟合的系数 a, b, c
+    pivot        = - b / (2*a)    # 计算二次函数对称轴
+    return pivot - cube_get.T_RADIUS
+
+# 修正图像中计算得到的球中心点的 xy 坐标
+def get_fixed_xyzpos_for_center(folder: str, time: int, xpos: int, ypos: int):
+    image3d = cube_get.get_cube_from_log_numpy_list_in_folder_around_center(folder, time, xpos, ypos)
+    tlen, xlen, ylen = image3d.shape
+    centers = [] # 所有修正性中心放到一个 list 里
+    areas   = [] # 计算所有类似圆的结构的面积
+    for i in range(tlen):
+        if svm_checker(image3d[i]) == "is_large_ball": # 对于所有大球，计算修正性中心
+            image_now = image3d[i].copy()
+            image_now[image_now > EMPTY_THRESH] = 1    # 二值化
+            optional_pos, area = get_fixed_xypos_for_image2d(image_now) # 计算 xy 坐标的修正位置
+            if optional_pos is not None:
+                centers.append(optional_pos)
+            areas.append(area)
+        else:
+            areas.append(None) # 未知面积信息
+    dz = get_fixed_zpos_for_areas(areas)
+    if len(centers) > 0:
+        stacked_array = np.stack(centers)
+        mean_array = np.mean(stacked_array, axis=0)
+        return mean_array[0][0], mean_array[1][0], dz # 返回坐标偏移量
+    else:
+        return 0, 0, dz # 如果没有合法大圆阶段，跳过，但是这种情况几乎不会出现
+
 # 给定一个已知可能成为聚类中心的点
 # 获取它的时空邻域 image3d 对象，检查大球的存在率
 # 如果小于一个指定的阈值，则认为是假阳
@@ -201,9 +310,17 @@ def get_all_cluster_center_in_folder(folder: str, show_rate=False) -> list:
             xpos    = cluster_set_center["xpos"]
             ypos    = cluster_set_center["ypos"]
             new_obj = json.loads(json.dumps(cluster_set_center))
-            if show_rate:
+            if show_rate: # 是否记录大圆比例
                 new_obj["rate"] = get_cluster_center_large_ball_rate(folder, time, xpos, ypos)
             cluster_center_set.append(new_obj)
+    for cluster_center in cluster_center_set: # 计算 xy 坐标修正
+        time       = cluster_center["time"]
+        xpos       = cluster_center["xpos"]
+        ypos       = cluster_center["ypos"]
+        dx, dy, dz = get_fixed_xyzpos_for_center(folder, time, xpos, ypos) # 中心点 xyz 坐标修正
+        cluster_center["xpos"] += dx
+        cluster_center["ypos"] += dy
+        cluster_center["time"] += dz
     return cluster_center_set
 
 # 计算出以毫米为单位的空间坐标信息

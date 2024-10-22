@@ -1,5 +1,6 @@
 import random
 import string
+import numpy as np
 
 from . import os_interface
 from . import image_log
@@ -11,6 +12,27 @@ try:
     has_matplotlib = True
 except:
     has_matplotlib = False
+
+# 输出拟合的二次函数图像信息
+def debug_output_curve(x_data, y_data, a, b, c):
+    x_fit = np.linspace(13, 23, 100) # 生成拟合曲线的 y 值
+    y_fit = a * x_fit**2 + b * x_fit + c
+    plt.scatter(x_data, y_data, color='red', label='Data Points') # 可视化原始点和拟合曲线
+    plt.plot(x_fit, y_fit, color='blue', label='Fitted Quadratic Curve')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.legend()
+    plt.title('Quadratic Curve Fitting')
+    plt.show()
+
+# 输出测试
+def debug_output_for_connected_component(connected_component, hull, centroid):
+    plt.plot(connected_component[:, 1], connected_component[:, 0], 'o', markersize=8) # 可视化凸包
+    for simplex in hull.simplices:
+        plt.plot(connected_component[simplex, 1], connected_component[simplex, 0], 'k-') # 画出凸包
+    plt.plot(centroid[0], centroid[1], 'r*', markersize=15, label='Centroid')
+    plt.gca().invert_yaxis()  # 翻转 y 轴以匹配图像坐标系
+    plt.show()
 
 # 仅用于测试，不要用于生产环境
 def show_debug_numpy_array(numpy_array, title="2darray"):

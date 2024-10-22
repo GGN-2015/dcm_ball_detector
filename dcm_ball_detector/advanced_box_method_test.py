@@ -20,7 +20,6 @@ def show_all_posible_box_in_folder(folder: str):
             matplotlib_utils.show_debug_numpy_array(image2d)
 
 # 对所有检测到标志物的帧进行圈圈处理，并将圈圈后的图片存入日志
-# 不要在生产环境中使用此功能
 def svm_check_all_file_in_folder_and_dump_log(folder: str):
     item_list = advanced_box_method.get_all_posible_box_in_folder(folder)
     stderr_log.log_info("dumping images log into log folder.")
@@ -62,8 +61,8 @@ def save_6x6_sample_for_certain_cube(folder, index, center_x, center_y, checker)
 def dump_images_for_debug(ball_centers, folder):
     for item in ball_centers:
         time = item["time"]
-        xpos = item["xpos"]
-        ypos = item["ypos"]
+        xpos = round(item["xpos"])
+        ypos = round(item["ypos"])
         filename      = os_interface.get_dcm_filename_by_index(time, folder)
         log_numpy_arr = dcm_interface.get_log_numpy_array_from_dcm_file(filename)
         image         = image_log.create_image_from_log_numpy_array_with_center_coord_list(log_numpy_arr, [(xpos, ypos)])

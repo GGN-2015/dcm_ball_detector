@@ -7,6 +7,7 @@ from . import dcm_interface
 import numpy as np
 import sys
 import os
+import json
 
 # 输出坐标相关信息，分析坐标球的相对顺序
 # 不要使用这个函数，目前只用于代码参考
@@ -37,7 +38,8 @@ def new_main(dcm_folder: str, debug=False):
     ball_centers            = advanced_box_method_test.svm_get_ball_centers_in_folder_and_dump_log(dcm_folder, debug)
     meta_data_dict          = dcm_interface.get_metadata_from_dcm_folder(dcm_folder)
     transfered_ball_centers = calibration.space_transfer_all(ball_centers, meta_data_dict)
-    print(transfered_ball_centers)
+    stderr_log.log_info("marker set coord3d info in natrual 3d coordination (order uncorrected): ") # 输出毫米为单位的坐标信息，不关心坐标的相对位置关系
+    print(json.dumps(transfered_ball_centers))
 
 # 显示用法
 def output_usage():
@@ -52,7 +54,6 @@ def abstract_param(param_val: str) -> bool:
     return bool_val
 
 argv_debug = abstract_param("--debug")
-
 if len(sys.argv) != 2: # 命令行参数不正确
     output_usage()
     exit(1)
@@ -63,3 +64,4 @@ if not os.path.isdir(argv_folder_path):
     exit(1)
 
 new_main(argv_folder_path, argv_debug)
+# old_main(argv_folder_path)
