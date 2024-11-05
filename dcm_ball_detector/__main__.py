@@ -37,7 +37,9 @@ def new_main(dcm_folder: str, debug=False):
     os_interface.clear_log_image() # 清空日志文件夹
     ball_centers            = advanced_box_method_test.svm_get_ball_centers_in_folder_and_dump_log(dcm_folder, debug)
     meta_data_dict          = dcm_interface.get_metadata_from_dcm_folder(dcm_folder)
-    transfered_ball_centers = calibration.space_transfer_all(ball_centers, meta_data_dict)
+    stderr_log.log_info("meta_data_dict: %s" % json.dumps(meta_data_dict))
+    xdir_len_mm             = dcm_interface.get_xdir_len_mm_from_dcm_folder(dcm_folder)
+    transfered_ball_centers = calibration.space_transfer_all(ball_centers, xdir_len_mm, meta_data_dict)
     stderr_log.log_info("marker set coord3d info in natrual 3d coordination (order uncorrected): ") # 输出毫米为单位的坐标信息，不关心坐标的相对位置关系
     print(json.dumps(transfered_ball_centers))
 

@@ -21,6 +21,7 @@ MAX_TIME_TOLENRANCE = 4    # 最大认同时间间隔
 MIN_LARGE_BALL_RATE = 0.15 # image3d 的 36 帧内容中，只要要有 20% 的大球，才会被认可为合法标志物
 EMPTY_THRESH        = 5.5
 TRY_CENTER_RADIUS   = 5
+DEBUG_SHOW          = False # 输出凸包以及拟合图片
 
 # 根据预先准备的数据集学习识别标志物的方法
 # svm_1 用于区分一般图样和标志物图样
@@ -248,6 +249,8 @@ def get_fixed_xypos_for_image2d(image2d: np.ndarray):
         xmax >= image2d.shape[0] - TRY_CENTER_RADIUS or 
         ymax >= image2d.shape[1] - TRY_CENTER_RADIUS): # 发现了连通块过大的情况
         return None, None
+    if DEBUG_SHOW:
+        matplotlib_utils.debug_output_for_connected_component(connected_component, hull, centroid)
     xpos, ypos = centroid - np.array(center)
     return np.array([[xpos], [ypos]]), hull.area # 返回新中心到旧中心的相对坐标
 
@@ -262,6 +265,8 @@ def get_fixed_zpos_for_areas(areas):
     coefficients = np.polyfit(x_data, y_data, 2)  # 拟合一个二次函数
     a, b, c      = coefficients # 提取拟合的系数 a, b, c
     pivot        = - b / (2*a)    # 计算二次函数对称轴
+    if DEBUG_SHOW:
+        matplotlib_utils.debug_output_curve(x_data, y_data, a, b, c)
     return pivot - cube_get.T_RADIUS
 
 # 修正图像中计算得到的球中心点的 xy 坐标
@@ -271,7 +276,7 @@ def get_fixed_xyzpos_for_center(folder: str, time: int, xpos: int, ypos: int):
     centers = [] # 所有修正性中心放到一个 list 里
     areas   = [] # 计算所有类似圆的结构的面积
     for i in range(tlen):
-        if svm_checker(image3d[i]) == "is_large_ball": # 对于所有大球，计算修正性中心
+        if svm_checker(image3d[i]) in ["is_large_ball", "is_small_ball"]: # 对于所有大球，计算修正性中心
             image_now = image3d[i].copy()
             image_now[image_now > EMPTY_THRESH] = 1    # 二值化
             optional_pos, area = get_fixed_xypos_for_image2d(image_now) # 计算 xy 坐标的修正位置

@@ -28,26 +28,26 @@ def test_get_marker_matrix_info(): # 对距离计算函数进行测试
 
 # 借助来自于数据集的元信息中的 slice_thickness 以及 pixel_spacing
 # 根据 CT 图像坐标体元编号，变换为以毫米为单位空间直角坐标系下（坐标原点不变）
-def space_transfer(time_x_y_dict: dict, dataset_meta_dict: dict) -> dict:
+def space_transfer(time_x_y_dict: dict, xdir_len_mm: float, dataset_meta_dict: dict) -> dict:
     time = time_x_y_dict["time"]
     xpos = time_x_y_dict["xpos"]
     ypos = time_x_y_dict["ypos"]
     slice_thickness = dataset_meta_dict["slice_thickness"]
 
     # 请注意，由于我们的图片进行过 xy 缩放，所以一定要注意要使用缩放后的比例尺才行
-    pixel_spacing   = dataset_meta_dict["resize_rate"] * dataset_meta_dict["pixel_spacing"]
+    pixel_spacing = np.array(dataset_meta_dict["resize_rate"]) * np.array(dataset_meta_dict["pixel_spacing"])
     return {
-        "zmm": float(time * slice_thickness ),
-        "xmm": float(xpos * pixel_spacing[0]),
-        "ymm": float(ypos * pixel_spacing[1]),
+        "xmm": float(ypos * pixel_spacing[1]),
+        "ymm": xdir_len_mm - float(xpos * pixel_spacing[0]),
+        "zmm": float(time * slice_thickness),
     }
 
 # 对一个 list 中的所有 time_x_y_dict 做 space_transfer
 # 生成一个 list of dict
-def space_transfer_all(time_x_y_dict_list: list, dataset_meta_dict: dict) -> list:
+def space_transfer_all(time_x_y_dict_list: list, xdir_len_mm:float, dataset_meta_dict: dict) -> list:
     arr = []
     for time_x_y_dict in time_x_y_dict_list:
-        arr.append(space_transfer(time_x_y_dict, dataset_meta_dict))
+        arr.append(space_transfer(time_x_y_dict, xdir_len_mm, dataset_meta_dict))
     return arr
 
 # 生成全排列

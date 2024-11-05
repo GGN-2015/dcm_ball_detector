@@ -39,8 +39,10 @@ def get_raw_numpy_array_from_dcm_file(filepath: str):
     ])
     return (scaled_matrix, {
         "slice_thickness": slice_thickness, # 切片厚度
-        "pixel_spacing"  : pixel_spacing,   # 像素大小
-        "resize_rate"    : resize_rate      # 用于缩放回原始大小所需要的比例变换
+        "slice_cnt"      : len(os_interface.get_all_dcm_file_in_folder(os.path.dirname(filepath))),
+        "pixel_spacing"  : tuple(pixel_spacing),   # 像素大小
+        "resize_rate"    : tuple(resize_rate),     # 用于缩放回原始大小所需要的比例变换
+        "array_shape"    : dataset.pixel_array.shape,
     })
 
 # 获取一个图像的非负修正矩阵
@@ -62,6 +64,12 @@ def get_metadata_from_dcm_folder(folder: str):
     dcm_file_list = os_interface.get_all_dcm_file_in_folder(folder)
     assert len(dcm_file_list) > 0
     return get_metadata_from_dcm_file(dcm_file_list[0]) # 我们假定文件夹中的所有图片具有相同的元信息
+
+# 根据元信息计算 x 方向的总记毫米数
+@functools.cache
+def get_xdir_len_mm_from_dcm_folder(dcm_folder) -> float:
+    metadata = get_metadata_from_dcm_folder(dcm_folder)
+    return float(metadata['array_shape'][0] * metadata['pixel_spacing'][0])
 
 # 读入一个 dcm 文件，返回一个对数化后的 numpy array 数据
 # 这里根据材质进行了一次筛选
