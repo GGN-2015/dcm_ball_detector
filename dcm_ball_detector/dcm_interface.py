@@ -106,11 +106,13 @@ def get_min_max_value_of_log_dataset_folder(folder: str):
         max_list.append(max_now)
     return min(min_list), max(max_list)
 
-# 获得某个文件夹中的 dcm 文件中的图片尺寸
-def get_max_xy_range_from_folder(folder):
+# 获得某个文件夹中的 dcm 文件中的图片尺寸，以及 dcm 文件的总数量
+@functools.cache
+def get_max_xyt_range_from_folder(folder):
     filename  = os_interface.get_dcm_filename_by_index(0, folder) # 假设所有文件具有相同的尺寸
+    filecnt   = os_interface.get_dcm_file_cnt_in_folder(folder)
     log_numpy = get_log_numpy_array_from_dcm_file(filename)
-    return log_numpy.shape
+    return tuple(list(log_numpy.shape) + [filecnt])
 
 # 扫描一个文件夹下的所有文件，进行批量化的对数化与正则化
 # 返回得到的全部 numpy array 构成的 list

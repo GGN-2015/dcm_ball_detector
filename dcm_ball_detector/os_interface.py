@@ -57,3 +57,8 @@ def get_all_dcm_file_in_folder(folder: str) -> list:
 def get_dcm_filename_by_index(index, folder) -> str:
     files = get_all_dcm_file_in_folder(folder)
     return files[index]
+
+# 获取一个文件夹中 dcm 文件的总数量
+def get_dcm_file_cnt_in_folder(folder) -> int:
+    files = get_all_dcm_file_in_folder(folder)
+    return len(files)
